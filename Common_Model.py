@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 
 class Common_Model(object):
-	def __init__(self, save_path, name = 'Not Specified'):
+	def __init__(self, name = 'Not Specified'):
 		self.model = None
 		self.trained = False
 	

@@ -16,9 +16,9 @@ class config:
 	# # path of test features by opensmile
 	# PREDICT_FEATURE_PATH_OPENSMILE = FEATURE_PATH + 'test_opensmile_casia.csv'
 	# path of taining features by librosa
-	TRAIN_FEATURE_PATH_LIBROSA = FEATURE_PATH + 'train_librosa_casia.p'
+	TRAIN_FEATURE_PATH_LIBROSA = FEATURE_PATH + 'train_librosa_emodb.csv'
 	# path of test features by librosa
-	PREDICT_FEATURE_PATH_LIBROSA = FEATURE_PATH + 'test_librosa_casia.p'
+	PREDICT_FEATURE_PATH_LIBROSA = FEATURE_PATH + 'test_librosa_emodb.csv'
 	
 	# path of models
 	MODEL_PATH = 'Models/'

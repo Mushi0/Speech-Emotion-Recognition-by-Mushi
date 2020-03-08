@@ -134,7 +134,7 @@ def load_feature(feature_path, train: bool):
 	else:
 		# standardization
 		# load standardization model
-		scaler = joblib.load(Config.MODEL_PATH + 'SCALER_LIBROSA.m')
+		scaler = joblib.load(config.MODEL_PATH + 'SCALER_LIBROSA.m')
 		X = scaler.transform(X)
 		return X
 
@@ -163,3 +163,4 @@ def get_data(train: bool, data_path = 'Emo-db/wav', feature_path = 'Features/tra
 	# 	X = pickle.loads(f.read())
 
 # get_data(data_path = 'Emo-db/wav', feature_path = 'Features/train_librosa_emodb.csv', train = True)
+# get_data(data_path = 'Emo-db/test/test.wav', feature_path = 'Features/test_librosa_emodb.csv', train = False)
