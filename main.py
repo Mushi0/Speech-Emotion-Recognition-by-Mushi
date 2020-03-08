@@ -3,7 +3,7 @@ from keras.utils import np_utils
 import os
 
 from MLP_SVM import SVM_Model, MLP_Model
-# from DNN_Model import LSTM_Model
+from LSTM_Model import LSTM_Model
 
 from Utils import load_model, Radar
 
