@@ -3,7 +3,9 @@ from keras.utils import np_utils
 import os
 
 from MLP_SVM import SVM_Model, MLP_Model
-from LSTM_Model import LSTM_Model
+from LSTM_CNN import LSTM_Model, CNN_Model
+# from LSTM_CNN import LSTM_Model
+# from CNN_Model import CNN_Model
 
 from Utils import load_model, Radar
 
@@ -15,10 +17,14 @@ from config import config
 # save_model_name: the name of the model to be saved with
 # if_load: if the features has been loaded
 def Train(model_name, save_model_name, if_load = True):
-	if(if_load == True):
-		x_train, x_test, y_train, y_test = ex.load_feature(feature_path = config.TRAIN_FEATURE_PATH_LIBROSA, train = True)
+	if(model_name == 'cnn'):
+		x_train, x_test, y_train, y_test, num_labels = ex.extract_data_cnn(flatten = False)
+	
 	else:
-		x_train, x_test, y_train, y_test = ex.get_data(config.DATA_PATH, config.TRAIN_FEATURE_PATH_LIBROSA, train = True)
+		if(if_load == True):
+			x_train, x_test, y_train, y_test = ex.load_feature(feature_path = config.TRAIN_FEATURE_PATH_LIBROSA, train = True)
+		else:
+			x_train, x_test, y_train, y_test = ex.get_data(config.DATA_PATH, config.TRAIN_FEATURE_PATH_LIBROSA, train = True)
 	
 	# build the model
 	if(model_name == 'svm'):
@@ -33,12 +39,21 @@ def Train(model_name, save_model_name, if_load = True):
 		
 		x_train = np.reshape(x_train, (x_train.shape[0], 1, x_train.shape[1]))
 		x_test = np.reshape(x_test, (x_test.shape[0], 1, x_test.shape[1]))
+	elif(model_name == 'cnn'):
+		y_train = np_utils.to_categorical(y_train)
+		y_val = np_utils.to_categorical(y_test)
+		
+		in_shape = x_train[0].shape
+		x_train = x_train.reshape(x_train.shape[0], in_shape[0], in_shape[1], 1)
+		x_test = x_test.reshape(x_test.shape[0], in_shape[0], in_shape[1], 1)
+		
+		model = CNN_Model(input_shape=x_train[0].shape, num_classes=num_labels)
 	
 	print('-------------------------------- Start --------------------------------')
 	if(model_name == 'svm' or model_name == 'mlp'):
 		model.train(x_train, y_train)
-	elif(model_name == 'lstm'):
-		model.train(x_train, y_train, x_test, y_val, n_epochs = config.epochs)
+	elif(model_name == 'lstm' or model_name == 'cnn'):
+		model.train(model_name, x_train, y_train, x_test, y_val, n_epochs = config.epochs)
 	
 	model.evaluate(x_test, y_test)
 	model.save_model(save_model_name)
@@ -46,31 +61,24 @@ def Train(model_name, save_model_name, if_load = True):
 	
 	return model
 
-
-'''
-Predict(): 预测音频情感
-输入:
-	model: 已加载或训练的模型
-	model_name: 模型名称
-	file_path: 要预测的文件路径
-	feature_method: 提取特征的方法（'o': Opensmile / 'l': librosa）
-输出：
-	预测结果和置信概率
-'''
 # prediction
 # model: the model that has been trained
 # model_name: the name of the model
 # file_path: the path of files to be predicted
 def Predict(model, model_name, file_path):
 	# file_path = os.path.dirname(os.path.abspath(__file__)) + '/' + file_path
-	test_feature = ex.get_data(False, file_path, config.PREDICT_FEATURE_PATH_LIBROSA)
+	if(model_name == 'cnn'):
+		test_feature = ex.get_feature_vector_from_mfcc(file_path, flatten = False)
+		test_feature = test_feature.reshape(1, test_feature.shape[0], test_feature.shape[1], 1)
+	else:
+		test_feature = ex.get_data(False, file_path, config.PREDICT_FEATURE_PATH_LIBROSA)
 	
 	if(model_name == 'lstm'):
 		test_feature = np.reshape(test_feature, (test_feature.shape[0], 1, test_feature.shape[1]))
 	
 	result = model.predict(test_feature)
 	
-	if(model_name == 'lstm'):
+	if(model_name == 'lstm' or model_name == 'cnn'):
 		result = np.argmax(result)
 	
 	result_prob = model.predict_proba(test_feature)[0]
@@ -86,9 +94,13 @@ def Predict(model, model_name, file_path):
 # model = load_model(load_model_name = 'SVM_LIBROSA', model_name = 'svm')
 # Predict(model, model_name = 'svm', file_path = 'Emo-db/test/test.wav')
 
-model = Train(model_name = 'lstm', save_model_name = 'LSTM_LIBROSA', if_load = True)
-model = load_model(load_model_name = 'LSTM_LIBROSA', model_name = 'lstm')
-Predict(model, model_name = 'lstm', file_path = 'Emo-db/test/test.wav')
+# model = Train(model_name = 'lstm', save_model_name = 'LSTM_LIBROSA', if_load = True)
+# model = load_model(load_model_name = 'LSTM_LIBROSA', model_name = 'lstm')
+# Predict(model, model_name = 'lstm', file_path = 'Emo-db/test/test.wav')
+
+# model = Train(model_name = 'cnn', save_model_name = 'CNN_LIBROSA', if_load = True)
+model = load_model(load_model_name = 'CNN_LIBROSA', model_name = 'cnn')
+Predict(model, model_name = 'cnn', file_path = 'Emo-db/test/test.wav')
 
 # model = Train(model_name = 'lstm', save_model_name = 'LSTM_OPENSMILE_1', if_load = True, feature_method = 'o')
 # model = load_model(load_model_name = 'LSTM_OPENSMILE', model_name = 'lstm')

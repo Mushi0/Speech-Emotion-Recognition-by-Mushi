@@ -3,7 +3,9 @@ import sys
 import numpy as np
 import keras
 from keras import Sequential
-from keras.layers import LSTM as KERAS_LSTM, Dense, Dropout
+# from keras.layers import LSTM as KERAS_LSTM, Dense, Dropout
+from keras.layers import LSTM as KERAS_LSTM, Dense, Dropout, Conv2D, Flatten, \
+	BatchNormalization, Activation, MaxPooling2D
 from Common_Model import Common_Model
 from Utils import plotCurve
 
@@ -30,7 +32,7 @@ class DNN_Model(Common_Model):
 	
 	# x_train, y_train: traing samples
 	# x_val, y_val: test samples
-	def train(self, x_train, y_train, x_val = None, y_val = None, n_epochs = 50):
+	def train(self, model_name, x_train, y_train, x_val = None, y_val = None, n_epochs = 50):
 		acc = []
 		loss = []
 		val_acc = []
@@ -41,8 +43,12 @@ class DNN_Model(Common_Model):
 		for i in range(n_epochs):
 			p = np.random.permutation(len(x_train))
 			x_train = x_train[p]
+			# print(y_train.shape)
 			y_train = y_train[p]
 			
+			'''if(model_name == 'cnn'):
+				x_train = np.reshape(x_train, (1, x_train.shape[0], x_train.shape[1], 1))
+				x_test = np.reshape(x_test, (1, x_test.shape[0], x_test.shape[1], 1))'''
 			history = self.model.fit(x_train, y_train, batch_size = 32, epochs = 1)
 			# loss and accuracy on training dataset
 			acc.append(history.history['accuracy'])
@@ -52,8 +58,12 @@ class DNN_Model(Common_Model):
 			val_acc.append(val_acc_single)
 			val_loss.append(val_loss_single)
 		
-		plotCurve(acc, val_acc, 'LSTM Accuracy', 'acc')
-		plotCurve(loss, val_loss, 'LSTM Loss', 'loss')
+		if(model_name == 'lstm'):
+			plotCurve(acc, val_acc, 'LSTM Accuracy', 'acc')
+			plotCurve(loss, val_loss, 'LSTM Loss', 'loss')
+		elif(model_name == 'cnn'):
+			plotCurve(acc, val_acc, 'CNN Accuracy', 'acc')
+			plotCurve(loss, val_loss, 'CNN Loss', 'loss')
 		self.trained = True
 	
 	def predict(self, sample):
@@ -61,7 +71,7 @@ class DNN_Model(Common_Model):
 			sys.stderr.write("No Model.")
 			sys.exit(-1)
 		
-		return np.argmax(self.model.predict(sample), axis=1)
+		return np.argmax(self.model.predict(sample), axis = 1)
 	
 	def make_model(self):
 		raise NotImplementedError()
@@ -72,7 +82,36 @@ class LSTM_Model(DNN_Model):
 		super(LSTM_Model, self).__init__(**params)
 	
 	def make_model(self):
-		self.model.add(KERAS_LSTM(128, input_shape=(1, self.input_shape)))
+		self.model.add(KERAS_LSTM(128, input_shape = (1, self.input_shape)))
 		self.model.add(Dropout(0.5))
-		self.model.add(Dense(32, activation='relu'))
+		self.model.add(Dense(32, activation = 'relu'))
 		# self.model.add(Dense(16, activation='tanh'))
+
+class CNN_Model(DNN_Model):
+	def __init__(self, **params):
+		params['name'] = 'CNN'
+		super(CNN_Model, self).__init__(**params)
+	
+	def make_model(self):
+		# Makes a CNN keras model with the default hyper parameters.
+		self.model.add(Conv2D(8, (13, 13),
+								input_shape=(
+								self.input_shape[0], self.input_shape[1], 1)))
+		self.model.add(BatchNormalization(axis = -1))
+		self.model.add(Activation('relu'))
+		self.model.add(Conv2D(8, (13, 13)))
+		self.model.add(BatchNormalization(axis = -1))
+		self.model.add(Activation('relu'))
+		self.model.add(MaxPooling2D(pool_size = (2, 1)))
+		self.model.add(Conv2D(8, (13, 13)))
+		self.model.add(BatchNormalization(axis = -1))
+		self.model.add(Activation('relu'))
+		self.model.add(Conv2D(8, (2, 2)))
+		self.model.add(BatchNormalization(axis = -1))
+		self.model.add(Activation('relu'))
+		self.model.add(MaxPooling2D(pool_size = (2, 1)))
+		self.model.add(Flatten())
+		self.model.add(Dense(64))
+		self.model.add(BatchNormalization())
+		self.model.add(Activation('relu'))
+		self.model.add(Dropout(0.2))

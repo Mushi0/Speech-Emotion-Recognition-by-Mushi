@@ -11,8 +11,10 @@ from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from config import config
+from speechpy.feature import mfcc
+import scipy.io.wavfile as wav
 
-def get_files_and_labels(path = 'Emo-db/wav', extension='.wav'):
+def get_files_and_labels(path = config.DATA_PATH, extension='.wav'):
 	# get all file names 
 	filepaths = os.listdir(path) 
 	filenames = [path + '/' + filename for filename in filepaths if extension in filename]
@@ -138,7 +140,7 @@ def load_feature(feature_path, train: bool):
 		X = scaler.transform(X)
 		return X
 
-def get_data(train: bool, data_path = 'Emo-db/wav', feature_path = 'Features/train_librosa_emodb.csv'):
+def get_data(train: bool, data_path = config.DATA_PATH, feature_path = config.TRAIN_FEATURE_PATH_LIBROSA):
 	if train:
 		filenames, labels = get_files_and_labels(data_path)
 		max_, min_ = get_max_min(filenames)
@@ -164,3 +166,61 @@ def get_data(train: bool, data_path = 'Emo-db/wav', feature_path = 'Features/tra
 
 # get_data(data_path = 'Emo-db/wav', feature_path = 'Features/train_librosa_emodb.csv', train = True)
 # get_data(data_path = 'Emo-db/test/test.wav', feature_path = 'Features/test_librosa_emodb.csv', train = False)
+
+def get_feature_vector_from_mfcc(file_path, flatten: bool, mfcc_len = 39) -> np.ndarray:
+	# make feature vector from MFCC for the given wav file.
+    fs, signal = wav.read(file_path)
+    s_len = len(signal)
+    # pad the signals to have same size if lesser than required
+    # else slice them
+    if s_len < mean_signal_length:
+        pad_len = mean_signal_length - s_len
+        pad_rem = pad_len % 2
+        pad_len //= 2
+        signal = np.pad(signal, (pad_len, pad_len + pad_rem),
+                        'constant', constant_values=0)
+    else:
+        pad_len = s_len - mean_signal_length
+        pad_len //= 2
+        signal = signal[pad_len:pad_len + mean_signal_length]
+    mel_coefficients = mfcc(signal, fs, num_cepstral=mfcc_len)
+    if flatten:
+        # Flatten the data
+        mel_coefficients = np.ravel(mel_coefficients)
+    return mel_coefficients
+
+def get_data_cnn(data_path, flatten: bool = True, mfcc_len = 39):
+	# extract data for training and testing
+	filenames, labels = get_files_and_labels(data_path)
+	data = []
+	labels = [config.CLASS_LABELS.index(label) for label in labels]
+	for filename in filenames:
+		feature_vector = get_feature_vector_from_mfcc(file_path = filename, mfcc_len = mfcc_len, flatten = flatten)
+		data.append(feature_vector)
+	return np.array(data), np.array(labels)
+
+def extract_data_cnn(flatten):
+    data, labels = get_data_cnn(config.DATA_PATH, flatten = flatten)
+    x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size = 0.2, random_state = 42)
+    return np.array(x_train), np.array(x_test), np.array(y_train), np.array(y_test), 7
+
+def get_feature_vector_from_mfcc(file_path, flatten: bool, mfcc_len = 39) -> np.ndarray:
+	mean_signal_length = 32000
+	fs, signal = wav.read(file_path)
+	s_len = len(signal)
+	# pad the signals to have same size if lesser than required
+	if s_len < mean_signal_length:
+		pad_len = mean_signal_length - s_len
+		pad_rem = pad_len % 2
+		pad_len //= 2
+		signal = np.pad(signal, (pad_len, pad_len + pad_rem),
+						'constant', constant_values=0)
+	else:
+		pad_len = s_len - mean_signal_length
+		pad_len //= 2
+		signal = signal[pad_len:pad_len + mean_signal_length]
+	mel_coefficients = mfcc(signal, fs, num_cepstral = mfcc_len)
+	if flatten:
+		# Flatten the data
+		mel_coefficients = np.ravel(mel_coefficients)
+	return mel_coefficients

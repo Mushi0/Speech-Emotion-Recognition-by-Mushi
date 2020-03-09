@@ -16,7 +16,7 @@ def load_model(load_model_name, model_name):
 		model_path = 'Models/' + load_model_name + '.m'
 		model = joblib.load(model_path)
 	
-	elif(model_name == 'lstm'):
+	elif(model_name == 'lstm' or model_name == 'cnn'):
 		# load json
 		model_path = 'Models/' + load_model_name + '.h5'
 		model_json_path = 'Models/' + load_model_name + '.json'

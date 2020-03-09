@@ -2,7 +2,7 @@
 
 class config:
 	# path of database
-	DATA_PATH = 'Datasets/CASIA/6'
+	DATA_PATH = 'Emo-db/wav'
 	# labels
 	CLASS_LABELS = ('W', 'L', 'E', 'A', 'F', 'T', 'N')
 	
