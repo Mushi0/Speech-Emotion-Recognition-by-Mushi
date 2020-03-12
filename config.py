@@ -19,6 +19,14 @@ class config:
 	TRAIN_FEATURE_PATH_LIBROSA = FEATURE_PATH + 'train_librosa_emodb.csv'
 	# path of test features by librosa
 	PREDICT_FEATURE_PATH_LIBROSA = FEATURE_PATH + 'test_librosa_emodb.csv'
+
+	TRAIN_FEATURE_PATH_NEW = FEATURE_PATH + 'train_new.csv'
+
+	PREDICT_FEATURE_PATH_NEW = FEATURE_PATH + 'test_new.csv'
 	
+	IMAGES_PATH = 'images'
+
+	IMAGES_PATH_TEST = 'test_images'
+
 	# path of models
 	MODEL_PATH = 'Models/'

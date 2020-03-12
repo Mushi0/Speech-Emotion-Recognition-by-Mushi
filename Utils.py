@@ -16,7 +16,7 @@ def load_model(load_model_name, model_name):
 		model_path = 'Models/' + load_model_name + '.m'
 		model = joblib.load(model_path)
 	
-	elif(model_name == 'rnn' or model_name == 'lstm' or model_name == 'cnn'):
+	elif(model_name == 'rnn' or model_name == 'lstm' or model_name == 'cnn' or model_name == 'vgg' or model_name == 'lstm2'):
 		# load json
 		model_path = 'Models/' + load_model_name + '.h5'
 		model_json_path = 'Models/' + load_model_name + '.json'
@@ -81,11 +81,22 @@ def Radar(data_prob):
 	# plt.close()
 
 # draw the waveform
-def Waveform(file_path):
-	data, sampling_rate = librosa.load(file_path)
-	plt.figure(figsize=(15, 5))
-	librosa.display.waveplot(data, sr = sampling_rate)
-	plt.show()
+def Waveform(file_path: str):
+    data, sampling_rate = librosa.load(file_path)
+    plt.figure(figsize=(15, 5))
+    librosa.display.waveplot(data, sr = sampling_rate)
+    plt.show()
+
+# def Waveform_1(file_path):
+# 	data, sampling_rate = librosa.load(file_path)
+# 	duration = librosa.get_duration(filename = file_path)
+# 	duration = round(duration,2) * 4
+# 	# print(duration)
+# 	plt.figure(figsize=(duration, 5))
+# 	librosa.display.waveplot(data, sr = sampling_rate)
+# 	plt.axis('off')
+# 	# plt.show()
+# 	return plt
 
 # draw the spectrogram
 def Spectrogram(file_path):

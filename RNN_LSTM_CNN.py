@@ -1,4 +1,3 @@
-# LSTM
 import sys
 import numpy as np
 import keras
@@ -69,6 +68,9 @@ class DNN_Model(Common_Model):
 		elif(model_name == 'rnn'):
 			plotCurve(acc, val_acc, 'RNN Accuracy', 'acc')
 			plotCurve(loss, val_loss, 'RNN Loss', 'loss')
+		elif(model_name == 'lstm2'):
+			plotCurve(acc, val_acc, 'LSTM2 Accuracy', 'acc')
+			plotCurve(loss, val_loss, 'LSTM2 Loss', 'loss')
 		self.trained = True
 	
 	def predict(self, sample):

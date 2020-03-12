@@ -13,15 +13,21 @@ from sklearn.preprocessing import StandardScaler
 from config import config
 from speechpy.feature import mfcc
 import scipy.io.wavfile as wav
+import Utils
+# import scipy.misc
+from skimage import io
 
-def get_files_and_labels(path = config.DATA_PATH, extension='.wav'):
+def get_files_and_labels(path = config.DATA_PATH, extension = '.wav'):
 	# get all file names 
 	filepaths = os.listdir(path) 
 	filenames = [path + '/' + filename for filename in filepaths if extension in filename]
 	# create labels
 	labels = []
 	for i in range(len(filenames)):
-		labels.append(filenames[i][16])
+		if(extension == '.wav'):
+			labels.append(filenames[i][16])
+		elif(extension == '.png'):
+			labels.append(filenames[i][12])
 	# print(filenames)
 	return filenames, labels
 
@@ -94,7 +100,7 @@ def features(X, sample_rate):
 	
 	return ext_features
 
-def extract_features(filename, pad = False):
+'''def extract_features(filename, pad = False):
 	print('opening: ' + filename)
 	X, sample_rate = librosa.load(filename, sr = None)
 	max_ = X.shape[0] / sample_rate
@@ -102,7 +108,17 @@ def extract_features(filename, pad = False):
 	if pad:
 		length = (max_ * sample_rate) - X.shape[0]
 		X = np.pad(X, (0, int(length)), 'constant')
-	return features(X, sample_rate)
+	return features(X, sample_rate)'''
+
+def extract_features_2(filename, max_, pad = True):
+	print('opening: ' + filename)
+	X, sample_rate = librosa.load(filename, sr = None)
+	# max_ = X.shape[0] / sample_rate
+	# adding zeros to the end of the vector
+	if pad:
+		length = (max_ * sample_rate) - X.shape[0]
+		X = np.pad(X, (0, int(length)), 'constant')
+	return X
 
 def get_max_min(filenames):
 	min_, max_ = 100, 0
@@ -120,6 +136,8 @@ def get_max_min(filenames):
 def load_feature(feature_path, train: bool):
 	features = pd.DataFrame(data = joblib.load(feature_path), columns = ['file_name', 'features', 'label'])
 	
+	print(features.shape)
+
 	X = list(features['features'])
 	Y = list(features['label'])
 	
@@ -163,9 +181,6 @@ def get_data(train: bool, data_path = config.DATA_PATH, feature_path = config.TR
 	# load the file:
 	# with open('Features/train_librosa_emodb.csv', 'rb') as f:
 	# 	X = pickle.loads(f.read())
-
-# get_data(data_path = 'Emo-db/wav', feature_path = 'Features/train_librosa_emodb.csv', train = True)
-# get_data(data_path = 'Emo-db/test/test.wav', feature_path = 'Features/test_librosa_emodb.csv', train = False)
 
 def get_feature_vector_from_mfcc(file_path, flatten: bool, mfcc_len = 39) -> np.ndarray:
 	# make feature vector from MFCC for the given wav file.
@@ -224,3 +239,74 @@ def get_feature_vector_from_mfcc(file_path, flatten: bool, mfcc_len = 39) -> np.
 		# Flatten the data
 		mel_coefficients = np.ravel(mel_coefficients)
 	return mel_coefficients
+
+def get_data_2(feature_path, train: bool, data_path = config.DATA_PATH):
+	if train:
+		filenames, labels = get_files_and_labels(data_path)
+		max_, min_ = get_max_min(filenames)
+		
+		mfcc_data = []
+		for i, filename in enumerate(filenames):
+			feature = extract_features_2(filename, max_, True)
+			label = labels[i]
+			feature = np.array(feature)
+			mfcc_data.append([filename, feature, config.CLASS_LABELS.index(label)])
+
+	else:
+		T, L = get_files_and_labels(config.DATA_PATH)
+		max_, min_ = get_max_min(T)
+
+		feature = extract_features_2(data_path, max_, True)
+		feature = np.array(feature)
+		mfcc_data = [[data_path, feature, -1]]
+	
+	cols = ['file_name', 'features', 'label']
+	mfcc_pd = pd.DataFrame(data = mfcc_data, columns = cols)
+	pickle.dump(mfcc_data, open(feature_path, 'wb'))
+	
+	return load_feature(feature_path, train = train)
+	# load the file:
+	# with open('Features/train_librosa_emodb.csv', 'rb') as f:
+	# 	X = pickle.loads(f.read())
+
+'''def get_images(filepath, save_path):
+	filenames, labels = get_files_and_labels(config.DATA_PATH)
+	for filename in filenames:
+		plt = Utils.Waveform_1(filename)
+		savepath = save_path + '/' + str(filename[11:18]) + '.png'
+		plt.savefig(savepath)
+		plt.close()
+
+def imread(path):
+	# return scipy.misc.imread(path).astype(np.float)
+	return io.imread(path, as_gray = True)
+
+def load_images(feature_path, train: bool):
+	images, labels = get_files_and_labels(path = config.IMAGES_PATH, extension = '.png')
+	
+	X = []
+	for image in images:
+		# img = list(imread(image))
+		print(image)
+		X.append(imread(image))
+	
+	X = np.array(X)
+
+	Y = [config.CLASS_LABELS.index(label) for label in labels]
+	
+	if train:
+		
+		x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size = 0.1, random_state = 42)
+		return x_train, x_test, y_train, y_test
+	
+	else:
+
+		return X'''
+
+# get_data(data_path = 'Emo-db/wav', feature_path = 'Features/train_librosa_emodb.csv', train = True)
+# get_data(data_path = 'Emo-db/test/test.wav', feature_path = 'Features/test_librosa_emodb.csv', train = False)
+
+# get_data_2(data_path = 'Emo-db/wav', feature_path = 'Features/train_new.csv', train = True)
+# get_data_2(data_path = 'Emo-db/test/test.wav', feature_path = 'Features/test_new.csv', train = False)
+
+# get_images(config.DATA_PATH, config.IMAGES_PATH)
